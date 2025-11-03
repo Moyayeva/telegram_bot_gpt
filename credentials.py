@@ -6,5 +6,5 @@ load_dotenv()
 
 # Read tokens from environment, fallback to empty string
 # Use uppercase variable names to be conventional in .env files
-ChatGPT_TOKEN = os.getenv('CHATGPT_TOKEN', '')
+CHATGPT_TOKEN = os.getenv('CHATGPT_TOKEN', '')
 BOT_TOKEN = os.getenv('BOT_TOKEN', '')
