@@ -177,4 +177,5 @@ logs/
 *.log
 # User data
 user_data/
-resources/context/
+resources/context/**.json
+resources/context/**.txt
