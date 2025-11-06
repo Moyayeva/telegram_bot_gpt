@@ -1,4 +1,4 @@
-from telegram import Update #, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes, CommandHandler
 import logging
 from gpt import ChatGptService
@@ -8,13 +8,12 @@ from credentials import CHATGPT_TOKEN, BOT_TOKEN
 from telegram.error import Conflict, NetworkError
 from telegram.ext import MessageHandler, filters
 
-# # Налаштування базового логування
-# logging.basicConfig(
-#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-#     level=logging.INFO
-# )
-# logger = logging.getLogger(__name__)
-
+# Налаштування базового логування
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 # Створення екземпляру сервісу ChatGPT, використовуючи токен з середовища/облікових даних
 chat_gpt = ChatGptService(CHATGPT_TOKEN)
@@ -22,7 +21,9 @@ chat_gpt = ChatGptService(CHATGPT_TOKEN)
 # Створення додатку Telegram, використовуючи BOT_TOKEN з середовища/облікових даних
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-# Глобальні змінні (меню)
+"""
+ Глобальні змінні (меню)
+"""
 
 quiz_score = 0
 quiz_questions = 0
@@ -57,7 +58,7 @@ langs = {
     'translate_dothraki': 'Дотракійська  🐎',
     'translate_valyrian': 'Висока валірійська 💍'
 }
-###
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Очищення всіх попередніх станів розмови
@@ -90,7 +91,7 @@ async def random_fact(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Запитуємо ChatGPT
         fact = await chat_gpt.send_question(prompt, "Розкажи мені цікавий факт")
-        # logger.info(f"lof fact: {fact}")
+        logger.info(f"lof fact: {fact}")
         # Створюємо кнопки для взаємодії
         buttons = {
             'random': 'Хочу ще факт 🔄',
@@ -104,7 +105,7 @@ async def random_fact(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_text_buttons(update, context, f"📚 *Випадковий факт:*\n\n{fact}", buttons)
 
     except Exception as e:
-        # logger.error(f"Помилка при отриманні випадкового факту: {e}")
+        logger.error(f"Помилка при отриманні випадкового факту: {e}")
         await send_text(update, context, "😔 На жаль, виникла помилка при отриманні факту. Спробуйте ще раз пізніше.")
         # Видаляємо повідомлення про очікування в разі помилки
         await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=message.message_id)
@@ -136,7 +137,7 @@ async def gpt_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Завантажуємо заздалегідь підготовлений промпт для GPT
     prompt = load_prompt('gpt')
     chat_gpt.set_prompt(prompt)  # Це повністю скидає історію повідомлень у сервісі ChatGPT
-    # chat_gpt.set_prompt(load_prompt('gpt'))
+    chat_gpt.set_prompt(load_prompt('gpt'))
 
     # Надсилаємо повідомлення з інструкцією
     await send_text(update, context, "😊 Задайте питання, і я відповім на нього.\nПросто надішліть текстове повідомлення.")
@@ -250,7 +251,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, bu
         try:
             # Надсилаємо запит до ChatGPT
             response = await chat_gpt.add_message(message_text)
-            print(response)
+
             # Видаляємо повідомлення про очікування
             await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
 
@@ -258,7 +259,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, bu
             await send_text(update, context, f"😊 *Відповідь ChatGPT:*\n\n{response}")
 
         except Exception as e:
-            # logger.error(f"Помилка при отриманні відповіді від ChatGPT: {e}")
+            logger.error(f"Помилка при отриманні відповіді від ChatGPT: {e}")
             await send_text(update, context, "😔 На жаль, виникла помилка при отриманні відповіді. Спробуйте ще раз пізніше.")
             # Видаляємо повідомлення про очікування в разі помилки
             await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
@@ -276,20 +277,16 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, bu
         try:
             # Надсилаємо запит до ChatGPT з промптом обраної особистості
             response = await chat_gpt.add_message(message_text)
-            print(message_text)
-            print(response)
-
 
             # Створюємо кнопку "Закінчити"
             buttons = {'start': 'Закінчити 🏁'}
 
             # Надсилаємо відповідь користувачу з кнопкою
-            personality_name = personality.replace('talk_', '').capitalize()
             await send_text_buttons(update, context, f"👤 {personalities[personality]}:\n\n{response}", buttons)
             # Видаляємо повідомлення про очікування
             await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
         except Exception as e:
-            # logger.error(f"Помилка при отриманні відповіді від ChatGPT: {e}")
+            logger.error(f"Помилка при отриманні відповіді від ChatGPT: {e}")
             await send_text(update, context, "😔 На жаль, виникла помилка при отриманні відповіді. Спробуйте ще раз пізніше.")
             # Видаляємо повідомлення про очікування в разі помилки
             await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
@@ -306,22 +303,19 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, bu
 
         # Відправляємо повідомлення про очікування відповіді
         waiting_message = await send_text(update, context, "📝 Обробляю вашу відповідь...")
-
+        print(waiting_message)
         try:
-             # Надсилаємо запит до ChatGPT з промптом quiz
-             response = await chat_gpt.add_message(message_text)
+             # # Надсилаємо запит до ChatGPT з промптом quiz
+             # response = await chat_gpt.add_message(message_text)
 
-             print(message_text)
-
-             quiz_state = 'question'
-             if quiz_state == 'question':
-                quiz_state = 'answer'
+             # quiz_state = 'question'
+             # if quiz_state == 'question':
+             #    quiz_state = 'answer'
              # Видаляємо повідомлення про очікування
 
              await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
              # Надсилаємо відповідь до ChatGPT
              response = await chat_gpt.add_message(message_text)
-             print(response)
 
              buttons = {
                  topic: 'Ще! 🤩',
@@ -337,7 +331,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, bu
              await send_text_buttons(update, context, f"❓Аналіз вашої відповіді за темою *{selected_topic}*:\n\n{response} Ваш рахунок: {quiz_score} з {quiz_questions}",buttons)
 
         except Exception as e:
-            # logger.error(f"Помилка при отриманні відповіді від ChatGPT: {e}")
+            logger.error(f"Помилка при отриманні відповіді від ChatGPT: {e}")
             await send_text(update, context,
                             "😔 На жаль, виникла помилка при отриманні відповіді. Спробуйте ще раз пізніше.")
             # Видаляємо повідомлення про очікування в разі помилки
@@ -347,8 +341,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, bu
         # Отримуємо обрану систему токенізації
         data = context.user_data.get('selected_enc')
         selected_enc = data.replace('token_', '')
-        print(data)
-        print(selected_enc)
+
         if not selected_enc:
             await send_text(update, context,
                             "😕 Будь ласка, спочатку виберіть спосіб кодування за допомогою команди /token")
@@ -362,17 +355,16 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, bu
              token_num = tokenize(message_text, selected_enc)
              buttons = {
                  'start': 'Закінчити 🏁',
-                 data: 'Ще! 🤩',
                  'token': 'Змінити спосіб кодування 🔄'
              }
              await send_text_buttons(update, context,
                                      f"Ваш текст містить *{token_num}* токенів в кодуванні *{selected_enc}*",
                                      buttons)
-             print(message_text)
+
              # Видаляємо повідомлення про очікування
              await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
         except Exception as e:
-             # logger.error(f"Помилка при підрахунку токенів: {e}")
+             logger.error(f"Помилка при підрахунку токенів: {e}")
              await send_text(update, context,
                              "😔 На жаль, виникла помилка при підрахунку токенів. Спробуйте ще раз пізніше.")
              # Видаляємо повідомлення про очікування
@@ -391,19 +383,19 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE, bu
         try:
             # Надсилаємо запит до ChatGPT з промптом обраної особистості
             response = await chat_gpt.add_message(message_text)
-            print(message_text)
-            print(response)
-
 
             # Створюємо кнопку "Закінчити"
-            buttons = {'start': 'Закінчити 🏁'}
+            buttons = {
+                'translate': 'Змінити мову 🔄',
+                'start': 'Закінчити 🏁'
+            }
             lang_lable = langs[lang].lower()
             # Надсилаємо відповідь користувачу з кнопкою
             await send_text_buttons(update, context, f"Переклад вашого тексту на таку мову: *{lang_lable}*\n\n{response}", buttons)
             # Видаляємо повідомлення про очікування
             await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
         except Exception as e:
-            # logger.error(f"Помилка при отриманні відповіді від ChatGPT: {e}")
+            logger.error(f"Помилка при отриманні відповіді від ChatGPT: {e}")
             await send_text(update, context, "😔 На жаль, виникла помилка при отриманні відповіді. Спробуйте ще раз пізніше.")
             # Видаляємо повідомлення про очікування в разі помилки
             await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
@@ -442,7 +434,6 @@ async def talk_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         # Надсилаємо повідомлення з інструкцією та кнопкою "Закінчити"
         buttons = {
-            'translate': 'Змінити мову 🔄',
             'start': 'Закінчити 🏁'
             }
         await send_text_buttons(update, context, f"👤 Ваш співрозмовник – *{personalities[data]}*. Надішліть повідомлення, щоб отримати відповідь.", buttons)
@@ -492,7 +483,7 @@ async def quiz_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         try:
             # Надсилаємо промпт і тему до ChatGPT
             quiz_question = await chat_gpt.add_message(data)
-            print(quiz_question)
+
             # Видаляємо повідомлення про очікування
             await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
 
@@ -500,7 +491,7 @@ async def quiz_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             await send_text(update, context, f"❓ *КВІЗ*\n\nПитання квіз за темою *{topics[data]}*\n\n{quiz_question}")
 
         except Exception as e:
-            # logger.error(f"Помилка при отриманні питання від ChatGPT: {e}")
+            logger.error(f"Помилка при отриманні питання від ChatGPT: {e}")
             await send_text(update, context, "😔 На жаль, виникла помилка при отриманні питання. Спробуйте ще раз пізніше.")
             # Видаляємо повідомлення про очікування в разі помилки
             await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=waiting_message.message_id)
@@ -585,7 +576,6 @@ async def translate_button_handler(update: Update, context: ContextTypes.DEFAULT
         selected_lang = data.replace('translate_', '')
 
         # Завантажуємо промпт для обраної особистості
-
         prompt = load_prompt('translate').replace('lang', selected_lang)
         chat_gpt.set_prompt(prompt)  # Це повністю скидає історію повідомлень у сервісі ChatGPT
         lang_lable = langs[data].lower()
@@ -594,13 +584,13 @@ async def translate_button_handler(update: Update, context: ContextTypes.DEFAULT
                         f"Ви обрали мову перекладу: <b>{lang_lable}</b>.\n\nБудь ласка, надішліть текст, який необхідно перекласти!")
 
 
-# Обробник помилок для бота
-# async def error_handler(update, context):
-#     logger.error(f"Помилка під час обробки оновлення: {context.error}")
-#     if isinstance(context.error, Conflict):
-#         logger.error("Конфлікт: інший екземпляр цього бота вже запущено. Переконайтесь, що працює лише один екземпляр.")
-#     elif isinstance(context.error, NetworkError):
-#         logger.error(f"Помилка мережі: {context.error}")
+#Обробник помилок для бота
+async def error_handler(update, context):
+    logger.error(f"Помилка під час обробки оновлення: {context.error}")
+    if isinstance(context.error, Conflict):
+        logger.error("Конфлікт: інший екземпляр цього бота вже запущено. Переконайтесь, що працює лише один екземпляр.")
+    elif isinstance(context.error, NetworkError):
+        logger.error(f"Помилка мережі: {context.error}")
 
 # Зареєструвати обробник команди можна так:
 app.add_handler(CommandHandler('start', start))
