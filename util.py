@@ -3,7 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, \
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
-
+import tiktoken
 
 # конвертує об'єкт user в рядок
 def dialog_user_info_to_str(user_data) -> str:
@@ -46,7 +46,7 @@ async def send_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE,
     return await context.bot.send_message(
         update.effective_message.chat_id,
         text=text, reply_markup=reply_markup,
-        message_thread_id=update.effective_message.message_thread_id)
+        message_thread_id=update.effective_message.message_thread_id, parse_mode=ParseMode.MARKDOWN)
 
 
 # надсилає в чат фото
@@ -82,7 +82,7 @@ def load_message(name):
         return file.read()
 
 
-# завантажує промпт з папки /resources/messages/
+# завантажує промпт з папки /resources/prompts/
 def load_prompt(name):
     with open("resources/prompts/" + name + ".txt", "r",
               encoding="utf8") as file:
@@ -95,6 +95,11 @@ async def default_callback_handler(update: Update,
     query = update.callback_query.data
     await send_html(update, context, f'You have pressed button with {query} callback')
 
+def tokenize(text:str, enc:str):
+    encoding = tiktoken.get_encoding(enc)
+    num_tokens = len(encoding.encode(text))
+    return num_tokens
 
-class Dialog:
-    pass
+
+# class Dialog:
+#     pass
